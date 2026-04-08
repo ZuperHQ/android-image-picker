@@ -16,6 +16,7 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.esafirm.imagepicker.R
 import com.esafirm.imagepicker.features.cameraonly.CameraOnlyConfig
@@ -162,15 +163,20 @@ class ImagePickerActivity : AppCompatActivity(), ImagePickerInteractionListener 
     }
 
     private fun setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         val main = findViewById<View>(R.id.main)
         ViewCompat.setOnApplyWindowInsetsListener(main) { _, insets ->
             val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
             val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            toolbar?.setPadding(0, statusBarInsets.top, 0, 0)
-            toolbar?.layoutParams?.height = resources.getDimensionPixelSize(
-                androidx.appcompat.R.dimen.abc_action_bar_default_height_material
-            ) + statusBarInsets.top
+            toolbar?.let {
+                it.setPadding(0, statusBarInsets.top, 0, 0)
+                it.layoutParams = it.layoutParams.apply {
+                    height = resources.getDimensionPixelSize(
+                        androidx.appcompat.R.dimen.abc_action_bar_default_height_material
+                    ) + statusBarInsets.top
+                }
+            }
             main.setPadding(0, 0, 0, navBarInsets.bottom)
             insets
         }
