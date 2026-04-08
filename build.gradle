@@ -1,20 +1,20 @@
 buildscript {
-    ext.kotlin_version = '1.7.20'
-    ext.core_ktx_version = '1.9.0'
+    ext.kotlin_version = '2.2.0'
+    ext.core_ktx_version = '1.12.0'
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.2'
+        classpath 'com.android.tools.build:gradle:8.13.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 ext {
     sdk = [
-        compileSdk: 33,
-        targetSdk : 33,
+        compileSdk: 36,
+        targetSdk : 36,
         minSdk    : 21
     ]
 }

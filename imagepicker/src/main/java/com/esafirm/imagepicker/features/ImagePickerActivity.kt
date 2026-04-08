@@ -4,14 +4,19 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.esafirm.imagepicker.R
 import com.esafirm.imagepicker.features.cameraonly.CameraOnlyConfig
 import com.esafirm.imagepicker.helper.ConfigUtils
@@ -29,11 +34,21 @@ class ImagePickerActivity : AppCompatActivity(), ImagePickerInteractionListener 
     private lateinit var imagePickerFragment: ImagePickerFragment
 
     private val config: ImagePickerConfig? by lazy {
-        intent.extras!!.getParcelable(ImagePickerConfig::class.java.simpleName)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.extras!!.getParcelable(ImagePickerConfig::class.java.simpleName, ImagePickerConfig::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.extras!!.getParcelable(ImagePickerConfig::class.java.simpleName)
+        }
     }
 
     private val cameraOnlyConfig: CameraOnlyConfig? by lazy {
-        intent.extras?.getParcelable(CameraOnlyConfig::class.java.simpleName)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.extras?.getParcelable(CameraOnlyConfig::class.java.simpleName, CameraOnlyConfig::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.extras?.getParcelable(CameraOnlyConfig::class.java.simpleName)
+        }
     }
 
     private val isCameraOnly by lazy { cameraOnlyConfig != null }
@@ -80,6 +95,8 @@ class ImagePickerActivity : AppCompatActivity(), ImagePickerInteractionListener 
         setTheme(currentConfig.theme)
         setContentView(R.layout.ef_activity_image_picker)
         setupView(currentConfig)
+        setupEdgeToEdge()
+        setupBackNavigation()
 
         if (savedInstanceState != null) {
             // The fragment has been restored.
@@ -118,7 +135,7 @@ class ImagePickerActivity : AppCompatActivity(), ImagePickerInteractionListener 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         if (id == android.R.id.home) {
-            onBackPressed()
+            onBackPressedDispatcher.onBackPressed()
             return true
         }
         if (id == R.id.menu_done) {
@@ -132,13 +149,30 @@ class ImagePickerActivity : AppCompatActivity(), ImagePickerInteractionListener 
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onBackPressed() {
-        if (this::imagePickerFragment.isInitialized) {
-            if (!imagePickerFragment.handleBack()) {
-                super.onBackPressed()
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (::imagePickerFragment.isInitialized && imagePickerFragment.handleBack()) {
+                    return
+                }
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
             }
-        } else {
-            super.onBackPressed()
+        })
+    }
+
+    private fun setupEdgeToEdge() {
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        val main = findViewById<View>(R.id.main)
+        ViewCompat.setOnApplyWindowInsetsListener(main) { _, insets ->
+            val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            toolbar?.setPadding(0, statusBarInsets.top, 0, 0)
+            toolbar?.layoutParams?.height = resources.getDimensionPixelSize(
+                androidx.appcompat.R.dimen.abc_action_bar_default_height_material
+            ) + statusBarInsets.top
+            main.setPadding(0, 0, 0, navBarInsets.bottom)
+            insets
         }
     }
 

@@ -44,7 +44,12 @@ class ImagePickerFragment : Fragment() {
     }
 
     private val config: ImagePickerConfig by lazy {
-        requireArguments().getParcelable(ImagePickerConfig::class.java.simpleName)!!
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireArguments().getParcelable(ImagePickerConfig::class.java.simpleName, ImagePickerConfig::class.java)!!
+        } else {
+            @Suppress("DEPRECATION")
+            requireArguments().getParcelable(ImagePickerConfig::class.java.simpleName)!!
+        }
     }
 
     private val permissions: Array<String> by lazy {
@@ -111,7 +116,12 @@ class ImagePickerFragment : Fragment() {
         val selectedImages = if (savedInstanceState == null) {
             config.selectedImages
         } else {
-            savedInstanceState.getParcelableArrayList(STATE_KEY_SELECTED_IMAGES)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState.getParcelableArrayList(STATE_KEY_SELECTED_IMAGES, Image::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                savedInstanceState.getParcelableArrayList(STATE_KEY_SELECTED_IMAGES)
+            }
         }
 
         val recyclerViewManager = createRecyclerViewManager(
@@ -122,7 +132,13 @@ class ImagePickerFragment : Fragment() {
         )
 
         if (savedInstanceState != null) {
-            recyclerViewManager.onRestoreState(savedInstanceState.getParcelable(STATE_KEY_RECYCLER))
+            val recyclerState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState.getParcelable(STATE_KEY_RECYCLER, Parcelable::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                savedInstanceState.getParcelable(STATE_KEY_RECYCLER)
+            }
+            recyclerViewManager.onRestoreState(recyclerState)
         }
 
         interactionListener.selectionChanged(recyclerViewManager.selectedImages)
